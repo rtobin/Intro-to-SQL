@@ -137,9 +137,13 @@ def sparse_continents
         SELECT
           continent
         FROM
-          countries
+          countries AS x
         WHERE
-
-      )
+          25000000 > ALL(
+            SELECT population
+            FROM countries AS y
+            WHERE x.continent = y.continent
+          )
+        )
   SQL
 end
