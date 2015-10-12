@@ -96,24 +96,27 @@ def travoltas_busiest_years
   execute(<<-SQL)
     SELECT
       yr,
-      COUNT(title)
+      grouped_table.movie_count
     FROM
       (
         SELECT
           yr,
-          COUNT(title) as movie_count,
-          name
+          COUNT(title) as movie_count
         FROM
           movies
           JOIN
             castings ON movies.id = castings.movie_id
           JOIN
             actors ON castings.actor_id = actors.id
+        WHERE
+          actors.name = 'John Travolta'
         GROUP BY
           yr
+
       ) AS grouped_table
     WHERE
       grouped_table.movie_count >= 2
+
   SQL
 end
 
@@ -121,6 +124,30 @@ def andrews_films_and_leads
   # List the film title and the leading actor for all of the films 'Julie
   # Andrews' played in.
   execute(<<-SQL)
+    SELECT
+      title,
+      name
+    FROM
+      movies
+      JOIN
+        castings ON movies.id = castings.movie_id
+        JOIN
+        actors ON castings.actor_id = actors.id
+    WHERE
+      title IN (
+        SELECT
+          title
+        FROM
+          movies
+          JOIN
+            castings ON movies.id = castings.movie_id
+            JOIN
+            actors ON castings.actor_id = actors.id
+          WHERE
+          actors.name = 'Julie Andrews'
+      )
+      AND ord = 1
+
   SQL
 end
 
@@ -128,6 +155,27 @@ def prolific_actors
   # Obtain a list in alphabetical order of actors who've had at least 15
   # starring roles.
   execute(<<-SQL)
+    SELECT
+      name
+    FROM (
+      SELECT
+        name,
+        COUNT(movies) AS movie_count
+      FROM
+        movies
+        JOIN
+          castings ON movies.id = castings.movie_id
+        JOIN
+          actors ON castings.actor_id = actors.id
+      WHERE
+        castings.ord = 1
+      GROUP BY
+        name
+      ) AS group_by_name
+    WHERE
+      group_by_name.movie_count >= 15
+    ORDER BY
+      name
   SQL
 end
 
@@ -135,11 +183,56 @@ def films_by_cast_size
   # List the films released in the year 1978 ordered by the number of actors
   # in the cast (descending), then by title (ascending).
   execute(<<-SQL)
+    SELECT
+      title,
+      group_by_title.actor_count AS number_of_actors
+    FROM (
+      SELECT
+        title,
+        COUNT(name) AS actor_count
+      FROM
+        movies
+        JOIN
+          castings ON movies.id = castings.movie_id
+        JOIN
+          actors ON castings.actor_id = actors.id
+      WHERE
+        yr = 1978
+      GROUP BY
+        title
+      ) AS group_by_title
+    ORDER BY
+      number_of_actors DESC,
+      title
+
   SQL
 end
 
 def colleagues_of_garfunkel
   # List all the people who have played alongside 'Art Garfunkel'.
   execute(<<-SQL)
+    SELECT
+      name
+    FROM
+      movies
+      JOIN
+        castings ON movies.id = castings.movie_id
+        JOIN
+        actors ON castings.actor_id = actors.id
+
+    WHERE
+      title IN (
+        SELECT
+          title
+        FROM
+          movies
+          JOIN
+            castings ON movies.id = castings.movie_id
+            JOIN
+            actors ON castings.actor_id = actors.id
+          WHERE
+          actors.name = 'Art Garfunkel'
+      ) AND name != 'Art Garfunkel'
+
   SQL
 end
